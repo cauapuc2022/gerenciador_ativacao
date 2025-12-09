@@ -1,3 +1,7 @@
+/* ==========================
+   BASE DO SISTEMA
+========================== */
+
 body {
     margin: 0;
     font-family: "Segoe UI", sans-serif;
@@ -13,41 +17,60 @@ header {
 }
 
 .container {
-    max-width: 1100px;
+    max-width: 1200px;
     margin: 30px auto;
     background: white;
     padding: 25px;
-    border-radius: 10px;
-    box-shadow: 0 3px 15px rgba(0,0,0,0.1);
+    border-radius: 16px;
+    box-shadow: 0 3px 15px rgba(0,0,0,0.12);
 }
 
 .btn-nova {
     background: #111;
     color: white;
-    padding: 12px 18px;
+    padding: 12px 20px;
     border: none;
-    border-radius: 6px;
+    border-radius: 8px;
     cursor: pointer;
-    margin-bottom: 20px;
+    margin-bottom: 25px;
 }
+
+/* ==========================
+   TABELA
+========================== */
 
 table {
     width: 100%;
     border-collapse: collapse;
+    table-layout: fixed;
 }
 
 th, td {
-    padding: 12px;
+    padding: 14px 10px;
     border-bottom: 1px solid #ddd;
     text-align: center;
     vertical-align: middle;
+
+    /* 🔥 QUEBRA DE LINHA EM QUALQUER CÉLULA DE TEXTO */
+    white-space: normal !important;
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
 }
+
+td.obs-col {
+    width: 60px !important;
+}
+
+/* ==========================
+   STATUS
+========================== */
 
 .status {
     padding: 6px 12px;
     border-radius: 8px;
     color: white;
     font-weight: bold;
+    display: inline-block;
 }
 
 .andamento { background: #f8b26a; }
@@ -55,38 +78,66 @@ th, td {
 .atrasado { background: #e98b8b; }
 .finalizado { background: #9ac0ff; }
 
+/* ==========================
+   PARTICIPANTES
+========================== */
+
 .etiqueta {
     display: inline-block;
-    padding: 6px 10px;
+    padding: 6px 12px;
     border-radius: 12px;
-    margin-right: 4px;
+    background: #eee;
     font-size: 12px;
+    white-space: nowrap;
+    line-height: 14px;
+}
+
+td.participantes-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 4px;
+}
+
+/* ==========================
+   AÇÕES 
+========================== */
+
+td.acoes-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 15px 8px;
 }
 
 .btn-acao {
     background: #e6e6e6;
     border: 1px solid #ccc;
-    padding: 6px 10px;
-    border-radius: 6px;
+    padding: 5px 14px;
+    border-radius: 8px;
     font-size: 12px;
+    line-height: 14px !important;
     cursor: pointer;
-    margin: 2px;
+    width: 90px;
+    text-align: center;
+    white-space: nowrap;
 }
 
-.btn-acao:hover {
-    background: #dcdcdc;
-}
+.btn-acao:hover { background: #dcdcdc; }
 
 .btn-acao.excluir {
     background: #f2c0c0;
     border-color: #d99;
 }
 
-.btn-acao.excluir:hover {
-    background: #e8a4a4;
-}
+.btn-acao.excluir:hover { background: #e8a4a4; }
 
-/* Abas */
+/* ==========================
+   ABAS
+========================== */
+
 .abas {
     position: fixed;
     bottom: 0;
@@ -111,51 +162,86 @@ th, td {
     border-top: 3px solid #111;
 }
 
-/* Modal */
+/* ==========================
+   MODAL
+========================== */
+
 .modal {
     position: fixed;
     display: none;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
     background: rgba(0,0,0,0.45);
     align-items: center;
     justify-content: center;
+    padding: 20px;
+    overflow-x: hidden !important;
 }
 
 .modal-content {
     background: white;
-    padding: 25px;
-    width: 420px;
-    border-radius: 10px;
+    padding: 20px;
+    width: 600px;
+    max-width: 95vw;
+    max-height: 85vh;
+    overflow-y: auto;
+    border-radius: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
 }
 
+.form-row {
+    display: flex;
+    gap: 12px;
+}
+
+.form-row > div { flex: 1; }
+
 .modal-content input,
-.modal-content textarea,
 .modal-content select {
     width: 100%;
-    padding: 10px;
-    margin-bottom: 12px;
+    padding: 9px;
     border-radius: 6px;
     border: 1px solid #ccc;
+}
+
+.modal-content textarea {
+    width: 98%;
+    min-height: 180px;
+    resize: vertical;
+    padding: 12px;
+    font-size: 14px;
+    line-height: 18px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    overflow-x: hidden;
 }
 
 .btn-salvar {
     background: #111;
     color: white;
-    padding: 10px 14px;
+    padding: 12px;
     border-radius: 6px;
     cursor: pointer;
 }
 
 .btn-cancelar {
-    background: #888;
+    background: #666;
     color: white;
-    padding: 10px 14px;
+    padding: 12px;
     border-radius: 6px;
     cursor: pointer;
 }
 
-/* Menu direito */
+/* ==========================
+   MENU CONTEXTO
+========================== */
+
 .menu-contexto {
     position: absolute;
     display: none;
@@ -168,6 +254,61 @@ th, td {
 .menu-contexto div {
     padding: 10px;
 }
-.menu-contexto div:hover {
-    background: #eee;
+
+.menu-contexto div:hover { background: #eee; }
+
+/* ==========================
+   RESPONSIVIDADE
+========================== */
+
+@media (max-width: 700px) {
+    .container {
+        max-width: 95%;
+        padding: 18px;
+    }
+    .modal-content {
+        width: 92vw;
+    }
+    .form-row {
+        flex-direction: column;
+    }
+}
+
+/* ==========================
+   PRAZO VENCIDO
+========================== */
+
+.prazo-vencido {
+    background: #FFEB8A !important;
+    color: #000 !important;
+    font-weight: 600;
+    border-radius: 15px;
+    padding: 2px 6px;
+}
+td:nth-child(7) .etiqueta { display: block !important;
+margin-bottom: 6px !important;
+/* distância vertical */ } 
+td:nth-child(7) .etiqueta:last-child { margin-bottom: 0 !important; } /* 
+*/ td:nth-child(3) { word-wrap: break-word !important; overflow-wrap: break-word
+ !important; white-space: normal !important;
+max-width: 20ch; /* ~80 caracteres */ }
+
+/* AÇÕES — aplica espaçamento REAL como fizemos em Participantes */
+
+/* Mantém o TD normal, sem flex */
+td:nth-child(9) {
+    display: table-cell !important;
+    vertical-align: middle !important;
+    padding: 14px 10px !important;
+}
+
+/* Cada botão vira bloco e recebe espaçamento */
+td:nth-child(9) .btn-acao {
+    display: block !important;
+    margin-bottom: 10px !important; /* 🔥 espaçamento real */
+}
+
+/* Remove espaçamento do último botão */
+td:nth-child(9) .btn-acao:last-child {
+    margin-bottom: 0 !important;
 }

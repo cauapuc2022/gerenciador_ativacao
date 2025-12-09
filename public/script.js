@@ -1,34 +1,18 @@
-// ------------------- BANCO DE DADOS LOCAL -------------------
-
-function salvarDB() {
-    localStorage.setItem("ativacao_quadros", JSON.stringify(quadros));
-}
-
-function carregarDB() {
-    const dados = localStorage.getItem("ativacao_quadros");
-
-    if (dados) {
-        quadros = JSON.parse(dados);
-    } else {
-        // cria um quadro inicial
-        quadros = { "Quadro 1": [] };
-        salvarDB();
-    }
-
-    quadroAtual = Object.keys(quadros)[0];
-}
-
-// ------------------- VARIÁVEIS GLOBAIS -------------------
-
 let quadros = {};
 let quadroAtual = "";
 let quadroSelecionado = "";
 let tarefaEditando = null;
 
+let ordemInicioAsc = true;
+let ordemPrazoAsc = true;
+
 // ------------------- INICIALIZAÇÃO -------------------
 
-function carregar() {
-    carregarDB();
+async function carregar() {
+    quadros = await fetch("http://localhost:8080/quadros").then(r => r.json());
+
+    const abas = Object.keys(quadros);
+    quadroAtual = abas[0];
 
     document.getElementById("tituloQuadro").innerText = quadroAtual;
 
@@ -52,6 +36,31 @@ function corPastel(str) {
     return `hsl(${hash % 360}, 70%, 85%)`;
 }
 
+function hojeISO() {
+    const hoje = new Date();
+    return hoje.toISOString().split("T")[0];
+}
+
+// ------------------- ORDENAR -------------------
+
+function ordenarPorInicio() {
+    quadros[quadroAtual].sort((a, b) => {
+        if (ordemInicioAsc) return (a.inicio || "") > (b.inicio || "") ? 1 : -1;
+        return (a.inicio || "") < (b.inicio || "") ? 1 : -1;
+    });
+    ordemInicioAsc = !ordemInicioAsc;
+    desenharTabela();
+}
+
+function ordenarPorPrazo() {
+    quadros[quadroAtual].sort((a, b) => {
+        if (ordemPrazoAsc) return (a.prazo || "") > (b.prazo || "") ? 1 : -1;
+        return (a.prazo || "") < (b.prazo || "") ? 1 : -1;
+    });
+    ordemPrazoAsc = !ordemPrazoAsc;
+    desenharTabela();
+}
+
 // ------------------- TABELA -------------------
 
 function desenharTabela() {
@@ -61,9 +70,11 @@ function desenharTabela() {
 
     let html = `
         <tr>
+            <th>Tipo</th>
             <th>Tarefa</th>
-            <th>Início</th>
-            <th>Prazo</th>
+            <th onclick="ordenarPorInicio()" style="cursor:pointer">Início ⬍</th>
+            <th>Ult. Atualização</th>
+            <th onclick="ordenarPorPrazo()" style="cursor:pointer">Prazo ⬍</th>
             <th>Status</th>
             <th>Participantes</th>
             <th>Obs</th>
@@ -71,15 +82,21 @@ function desenharTabela() {
         </tr>
     `;
 
+    const hoje = hojeISO();
+
     quadros[quadroAtual].forEach(t => {
+        const prazoVencido = t.prazo && t.prazo < hoje ? "prazo-vencido" : "";
+
         html += `
             <tr>
+                <td>${t.tipo || ""}</td>
                 <td>${t.nome}</td>
                 <td>${formatarDataBR(t.inicio)}</td>
-                <td>${formatarDataBR(t.prazo)}</td>
+                <td>${formatarDataBR(t.ultAtualizacao)}</td>
+                <td class="${prazoVencido}">${formatarDataBR(t.prazo)}</td>
                 <td><span class="status ${t.status.toLowerCase()}">${t.status}</span></td>
                 <td>${t.participantes.map(p => `<span class="etiqueta" style="background:${corPastel(p)}">${p}</span>`).join("")}</td>
-                <td><button class="btn-acao" onclick="verObs('${t.observacoes || ""}')">Ver</button></td>
+                <td><button class="btn-acao" onclick='verObs(${JSON.stringify(t.observacoes || "")})'>Ver</button></td>
                 <td>
                     <button class="btn-acao" onclick="editar(${t.id})">Editar</button>
                     <button class="btn-acao excluir" onclick="excluirTarefa(${t.id})">Excluir</button>
@@ -94,7 +111,12 @@ function desenharTabela() {
 // ------------------- OBSERVAÇÕES -------------------
 
 function verObs(texto) {
-    alert("Observação:\n\n" + texto);
+    document.getElementById("textoObs").innerText = texto || "Nenhuma observação.";
+    document.getElementById("modalObs").style.display = "flex";
+}
+
+function fecharObs() {
+    document.getElementById("modalObs").style.display = "none";
 }
 
 // ------------------- MODAL TAREFA -------------------
@@ -103,7 +125,9 @@ function abrirModalTarefa() {
     tarefaEditando = null;
 
     inpNome.value = "";
+    inpTipo.value = "";
     inpInicio.value = "";
+    inpUltAtual.value = "";
     inpPrazo.value = "";
     inpStatus.value = "Em andamento";
     inpParticipantes.value = "";
@@ -123,9 +147,10 @@ function fecharModalTarefa() {
 
 function salvarTarefa() {
     const dados = {
-        id: tarefaEditando ?? Date.now(), // ID único
         nome: inpNome.value,
+        tipo: inpTipo.value,
         inicio: inpInicio.value,
+        ultAtualizacao: inpUltAtual.value,
         prazo: inpPrazo.value,
         status: inpStatus.value,
         participantes: inpParticipantes.value.split(",").map(s => s.trim()).filter(x => x),
@@ -134,21 +159,35 @@ function salvarTarefa() {
 
     // EDITAR
     if (tarefaEditando) {
-        quadros[quadroAtual] = quadros[quadroAtual].map(t =>
-            t.id == tarefaEditando ? { ...dados } : t
-        );
-        salvarDB();
-        desenharTabela();
-        fecharModalTarefa();
-        tarefaEditando = null;
+        fetch(`http://localhost:8080/tarefas/${quadroAtual}/${tarefaEditando}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(dados)
+        }).then(() => {
+            quadros[quadroAtual] = quadros[quadroAtual].map(t =>
+                t.id == tarefaEditando ? { ...t, ...dados } : t
+            );
+            desenharTabela();
+            fecharModalTarefa();
+            tarefaEditando = null;
+        });
+
         return;
     }
 
     // NOVA TAREFA
-    quadros[quadroAtual].push(dados);
-    salvarDB();
-    desenharTabela();
-    fecharModalTarefa();
+    fetch("http://localhost:8080/tarefas", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ quadro: quadroAtual, ...dados })
+    })
+        .then(() => fetch("http://localhost:8080/quadros"))
+        .then(r => r.json())
+        .then(db => {
+            quadros = db;
+            desenharTabela();
+            fecharModalTarefa();
+        });
 }
 
 // ------------------- EDITAR -------------------
@@ -160,7 +199,9 @@ function editar(id) {
     tarefaEditando = id;
 
     inpNome.value = tarefa.nome;
+    inpTipo.value = tarefa.tipo || "";
     inpInicio.value = tarefa.inicio;
+    inpUltAtual.value = tarefa.ultAtualizacao || "";
     inpPrazo.value = tarefa.prazo;
     inpStatus.value = tarefa.status;
     inpParticipantes.value = tarefa.participantes.join(", ");
@@ -172,12 +213,15 @@ function editar(id) {
     modalTarefa.style.display = "flex";
 }
 
-// ------------------- EXCLUIR -------------------
+// ------------------- EXCLUIR TAREFA -------------------
 
 function excluirTarefa(id) {
-    quadros[quadroAtual] = quadros[quadroAtual].filter(t => t.id != id);
-    salvarDB();
-    desenharTabela();
+    fetch(`http://localhost:8080/tarefas/${quadroAtual}/${id}`, {
+        method: "DELETE"
+    }).then(() => {
+        quadros[quadroAtual] = quadros[quadroAtual].filter(t => t.id != id);
+        desenharTabela();
+    });
 }
 
 // ------------------- ABAS -------------------
@@ -242,35 +286,26 @@ function fecharExcluir() {
     modalExcluir.style.display = "none";
 }
 
-// CONFIRMAR RENOMEAR QUADRO
 function confirmarRenomear() {
     const novo = inpRenomear.value;
 
-    if (!novo.trim()) return;
-
-    quadros[novo] = quadros[quadroSelecionado];
-    delete quadros[quadroSelecionado];
-
-    quadroAtual = novo;
-
-    salvarDB();
-    fecharRenomear();
-    carregar();
+    fetch("http://localhost:8080/quadros/renomear", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ antigo: quadroSelecionado, novo })
+    }).then(() => {
+        carregar();
+        fecharRenomear();
+    });
 }
 
-// CONFIRMAR EXCLUIR QUADRO
 function confirmarExcluir() {
-    delete quadros[quadroSelecionado];
-
-    if (Object.keys(quadros).length === 0) {
-        quadros = { "Quadro 1": [] };
-    }
-
-    quadroAtual = Object.keys(quadros)[0];
-
-    salvarDB();
-    fecharExcluir();
-    carregar();
+    fetch(`http://localhost:8080/quadros/${quadroSelecionado}`, {
+        method: "DELETE"
+    }).then(() => {
+        carregar();
+        fecharExcluir();
+    });
 }
 
 // ------------------- MODAL QUADRO -------------------
@@ -284,13 +319,13 @@ function fecharModalQuadro() {
 }
 
 function criarQuadro() {
-    const nome = inpNovoQuadro.value.trim();
-    if (!nome) return;
+    const nome = inpNovoQuadro.value;
 
-    quadros[nome] = [];
-    salvarDB();
+    fetch("http://localhost:8080/quadros", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nome })
+    }).then(() => carregar());
 
-    inpNovoQuadro.value = "";
-    fecharModalQuadro();
-    carregar();
+    modalQuadro.style.display = "none";
 }

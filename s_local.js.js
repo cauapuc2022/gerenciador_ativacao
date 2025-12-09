@@ -96,7 +96,6 @@ app.delete("/tarefas/:quadro/:id", (req, res) => {
 
 // --------------------------------------------------
 
-const PORT = process.env.PORT || 8080;
-app.listen(PORT, () =>
-    console.log("Servidor rodando na porta " + PORT)
+app.listen(8080, () =>
+    console.log("Sistema no ar: http://localhost:8080")
 );
