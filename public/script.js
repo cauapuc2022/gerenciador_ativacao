@@ -9,10 +9,14 @@ let ordemPrazoAsc = true;
 // ------------------- INICIALIZAÇÃO -------------------
 
 async function carregar() {
+    const quadroAnterior = quadroAtual; // ← Mantém o quadro selecionado
+
     quadros = await fetch("/quadros").then(r => r.json());
 
     const abas = Object.keys(quadros);
-    quadroAtual = abas[0] || "Quadro 1";
+
+    // Mantém o quadro atual se ainda existir
+    quadroAtual = abas.includes(quadroAnterior) ? quadroAnterior : abas[0] || "Quadro 1";
 
     document.getElementById("tituloQuadro").innerText = quadroAtual;
 
@@ -168,7 +172,6 @@ function salvarTarefa() {
         observacoes: inpObs.value
     };
 
-    // EDITAR
     if (tarefaEditando) {
         fetch(`/tarefas/${tarefaEditando}`, {
             method: "PUT",
@@ -178,11 +181,9 @@ function salvarTarefa() {
             carregar();
             fecharModalTarefa();
         });
-
         return;
     }
 
-    // NOVA TAREFA
     fetch("/tarefas", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
