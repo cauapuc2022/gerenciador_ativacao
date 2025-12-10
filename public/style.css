@@ -89,7 +89,7 @@ td.obs-col {
     color: black !important;
 }
 
-.finalizado {
+.cancelado {
     background: #9ac0ff !important; /* azul */
     color: black !important;
 }
