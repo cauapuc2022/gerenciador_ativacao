@@ -1,0 +1,8 @@
+# Arquivo local que não deve ir para o GitHub
+s_local.js
+
+# "Banco de dados" local do projeto
+quadros.json
+
+# Pasta gigante que nunca vai pro GitHub
+node_modules/
