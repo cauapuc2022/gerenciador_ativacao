@@ -9,10 +9,10 @@ let ordemPrazoAsc = true;
 // ------------------- INICIALIZAÇÃO -------------------
 
 async function carregar() {
-    quadros = await fetch("http://localhost:8080/quadros").then(r => r.json());
+    quadros = await fetch("/quadros").then(r => r.json());
 
     const abas = Object.keys(quadros);
-    quadroAtual = abas[0];
+    quadroAtual = abas[0] || "Quadro 1";
 
     document.getElementById("tituloQuadro").innerText = quadroAtual;
 
@@ -48,6 +48,7 @@ function ordenarPorInicio() {
         if (ordemInicioAsc) return (a.inicio || "") > (b.inicio || "") ? 1 : -1;
         return (a.inicio || "") < (b.inicio || "") ? 1 : -1;
     });
+
     ordemInicioAsc = !ordemInicioAsc;
     desenharTabela();
 }
@@ -57,6 +58,7 @@ function ordenarPorPrazo() {
         if (ordemPrazoAsc) return (a.prazo || "") > (b.prazo || "") ? 1 : -1;
         return (a.prazo || "") < (b.prazo || "") ? 1 : -1;
     });
+
     ordemPrazoAsc = !ordemPrazoAsc;
     desenharTabela();
 }
@@ -94,12 +96,20 @@ function desenharTabela() {
                 <td>${formatarDataBR(t.inicio)}</td>
                 <td>${formatarDataBR(t.ultAtualizacao)}</td>
                 <td class="${prazoVencido}">${formatarDataBR(t.prazo)}</td>
-                <td><span class="status ${t.status.toLowerCase()}">${t.status}</span></td>
-                <td>${t.participantes.map(p => `<span class="etiqueta" style="background:${corPastel(p)}">${p}</span>`).join("")}</td>
-                <td><button class="btn-acao" onclick='verObs(${JSON.stringify(t.observacoes || "")})'>Ver</button></td>
+                <td><span class="status ${t.status?.toLowerCase().replace(" ", "-")}">${t.status}</span></td>
+                <td>${(t.participantes || []).map(p => `
+                    <span class="etiqueta" style="background:${corPastel(p)}">${p}</span>
+                `).join("")}</td>
+
                 <td>
-                    <button class="btn-acao" onclick="editar(${t.id})">Editar</button>
-                    <button class="btn-acao excluir" onclick="excluirTarefa(${t.id})">Excluir</button>
+                    <button class="btn-acao" onclick='verObs(${JSON.stringify(t.observacoes || "")})'>
+                        Ver
+                    </button>
+                </td>
+
+                <td>
+                    <button class="btn-acao" onclick="editar('${t._id}')">Editar</button>
+                    <button class="btn-acao excluir" onclick="excluirTarefa('${t._id}')">Excluir</button>
                 </td>
             </tr>
         `;
@@ -147,6 +157,7 @@ function fecharModalTarefa() {
 
 function salvarTarefa() {
     const dados = {
+        quadro: quadroAtual,
         nome: inpNome.value,
         tipo: inpTipo.value,
         inicio: inpInicio.value,
@@ -159,41 +170,33 @@ function salvarTarefa() {
 
     // EDITAR
     if (tarefaEditando) {
-        fetch(`http://localhost:8080/tarefas/${quadroAtual}/${tarefaEditando}`, {
+        fetch(`/tarefas/${tarefaEditando}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(dados)
         }).then(() => {
-            quadros[quadroAtual] = quadros[quadroAtual].map(t =>
-                t.id == tarefaEditando ? { ...t, ...dados } : t
-            );
-            desenharTabela();
+            carregar();
             fecharModalTarefa();
-            tarefaEditando = null;
         });
 
         return;
     }
 
     // NOVA TAREFA
-    fetch("http://localhost:8080/tarefas", {
+    fetch("/tarefas", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ quadro: quadroAtual, ...dados })
-    })
-        .then(() => fetch("http://localhost:8080/quadros"))
-        .then(r => r.json())
-        .then(db => {
-            quadros = db;
-            desenharTabela();
-            fecharModalTarefa();
-        });
+        body: JSON.stringify(dados)
+    }).then(() => {
+        carregar();
+        fecharModalTarefa();
+    });
 }
 
 // ------------------- EDITAR -------------------
 
-function editar(id) {
-    const tarefa = quadros[quadroAtual].find(t => t.id == id);
+async function editar(id) {
+    const tarefa = quadros[quadroAtual].find(t => t._id === id);
     if (!tarefa) return;
 
     tarefaEditando = id;
@@ -216,12 +219,7 @@ function editar(id) {
 // ------------------- EXCLUIR TAREFA -------------------
 
 function excluirTarefa(id) {
-    fetch(`http://localhost:8080/tarefas/${quadroAtual}/${id}`, {
-        method: "DELETE"
-    }).then(() => {
-        quadros[quadroAtual] = quadros[quadroAtual].filter(t => t.id != id);
-        desenharTabela();
-    });
+    fetch(`/tarefas/${id}`, { method: "DELETE" }).then(() => carregar());
 }
 
 // ------------------- ABAS -------------------
@@ -287,12 +285,10 @@ function fecharExcluir() {
 }
 
 function confirmarRenomear() {
-    const novo = inpRenomear.value;
-
-    fetch("http://localhost:8080/quadros/renomear", {
+    fetch("/quadros/renomear", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ antigo: quadroSelecionado, novo })
+        body: JSON.stringify({ antigo: quadroSelecionado, novo: inpRenomear.value })
     }).then(() => {
         carregar();
         fecharRenomear();
@@ -300,12 +296,9 @@ function confirmarRenomear() {
 }
 
 function confirmarExcluir() {
-    fetch(`http://localhost:8080/quadros/${quadroSelecionado}`, {
-        method: "DELETE"
-    }).then(() => {
-        carregar();
-        fecharExcluir();
-    });
+    fetch(`/quadros/${quadroSelecionado}`, { method: "DELETE" })
+        .then(() => carregar())
+        .then(() => fecharExcluir());
 }
 
 // ------------------- MODAL QUADRO -------------------
@@ -319,12 +312,10 @@ function fecharModalQuadro() {
 }
 
 function criarQuadro() {
-    const nome = inpNovoQuadro.value;
-
-    fetch("http://localhost:8080/quadros", {
+    fetch("/quadros", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nome })
+        body: JSON.stringify({ nome: inpNovoQuadro.value })
     }).then(() => carregar());
 
     modalQuadro.style.display = "none";
