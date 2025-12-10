@@ -50,8 +50,6 @@ th, td {
     border-bottom: 1px solid #ddd;
     text-align: center;
     vertical-align: middle;
-
-    /* 🔥 QUEBRA DE LINHA EM QUALQUER CÉLULA DE TEXTO */
     white-space: normal !important;
     word-wrap: break-word !important;
     overflow-wrap: break-word !important;
@@ -73,10 +71,28 @@ td.obs-col {
     display: inline-block;
 }
 
-.andamento { background: #f8b26a; }
-.concluído { background: #8bd48b; }
-.atrasado { background: #e98b8b; }
-.finalizado { background: #9ac0ff; }
+/* === Correção para os nomes gerados pelo JavaScript === */
+
+.em-andamento {
+    background: #f8b26a !important; /* amarelo */
+    color: black !important;
+}
+
+.concluido,
+.concluído {
+    background: #8bd48b !important; /* verde */
+    color: black !important;
+}
+
+.atrasado {
+    background: #e98b8b !important; /* vermelho */
+    color: black !important;
+}
+
+.finalizado {
+    background: #9ac0ff !important; /* azul */
+    color: black !important;
+}
 
 /* ==========================
    PARTICIPANTES
@@ -132,7 +148,9 @@ td.acoes-col {
     border-color: #d99;
 }
 
-.btn-acao.excluir:hover { background: #e8a4a4; }
+.btn-acao.excluir:hover {
+    background: #e8a4a4;
+}
 
 /* ==========================
    ABAS
@@ -255,7 +273,9 @@ td.acoes-col {
     padding: 10px;
 }
 
-.menu-contexto div:hover { background: #eee; }
+.menu-contexto div:hover {
+    background: #eee;
+}
 
 /* ==========================
    RESPONSIVIDADE
@@ -285,31 +305,39 @@ td.acoes-col {
     border-radius: 15px;
     padding: 2px 6px;
 }
-td:nth-child(7) .etiqueta { display: block !important;
-margin-bottom: 6px !important;
-/* distância vertical */ } 
-td:nth-child(7) .etiqueta:last-child { margin-bottom: 0 !important; } /* 
-*/ td:nth-child(3) { word-wrap: break-word !imgit push origin main
-portant; overflow-wrap: break-word
- !important; white-space: normal !important;
-max-width: 20ch; /* ~80 caracteres */ }
 
-/* AÇÕES — aplica espaçamento REAL como fizemos em Participantes */
+/* PARTICIPANTES (correção de empilhamento) */
+td:nth-child(7) .etiqueta {
+    display: block !important;
+    margin-bottom: 6px !important;
+}
+td:nth-child(7) .etiqueta:last-child {
+    margin-bottom: 0 !important;
+}
 
-/* Mantém o TD normal, sem flex */
+/* Quebra de linha para datas */
+td:nth-child(3) {
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+    white-space: normal !important;
+    max-width: 20ch;
+}
+
+/* ==========================
+   AÇÕES — espaçamento real
+========================== */
+
 td:nth-child(9) {
     display: table-cell !important;
     vertical-align: middle !important;
     padding: 14px 10px !important;
 }
 
-/* Cada botão vira bloco e recebe espaçamento */
 td:nth-child(9) .btn-acao {
     display: block !important;
-    margin-bottom: 10px !important; /* 🔥 espaçamento real */
+    margin-bottom: 10px !important;
 }
 
-/* Remove espaçamento do último botão */
 td:nth-child(9) .btn-acao:last-child {
     margin-bottom: 0 !important;
 }
